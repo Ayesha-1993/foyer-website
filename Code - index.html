@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Foyer — Every call answered. Every time.</title>
+<meta name="description" content="Foyer is the AI receptionist that answers every call, books every appointment, and remembers every conversation — so your business never misses the door.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0B0E14;
+    --surface: #12161F;
+    --surface-line: #1E2430;
+    --accent: #5EEAD4;
+    --accent-dim: #3D9184;
+    --accent-glow: rgba(45, 212, 191, 0.22);
+    --paper: #F5F3EE;
+    --muted: #8B8D98;
+    --radius: 10px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'Inter', sans-serif;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  .tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 32px;
+  }
+
+  a { color: inherit; text-decoration: none; }
+
+  /* Blueprint grid background — fixed behind the whole page so glass
+     panels always have something to blur as you scroll past them */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-image:
+      linear-gradient(var(--surface-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--surface-line) 1px, transparent 1px);
+    background-size: 48px 48px;
+    opacity: 0.3;
+  }
+
+  /* Nav */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(11, 14, 20, 0.85);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--surface-line);
+  }
+
+  nav {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .logo-mark {
+    width: 10px;
+    height: 10px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 36px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .nav-links a:hover { color: var(--paper); }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 24px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: none;
+  }
+
+  .btn-primary {
+    background: var(--accent-dim);
+    color: #EFFBF8;
+    box-shadow: 0 6px 18px -6px rgba(61, 145, 132, 0.4);
+  }
+
+  .btn-primary:hover { background: #489e90; }
+
+  .btn-ghost {
+    background: rgba(45, 212, 191, 0.1);
+    border: 1px solid rgba(45, 212, 191, 0.3);
+    color: var(--accent);
+  }
+
+  .btn-ghost:hover { border-color: rgba(94, 234, 212, 0.55); }
+
+  /* Hero */
+  .hero {
+    position: relative;
+    padding: 120px 0 100px;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  .hero-content { position: relative; z-index: 2; }
+
+  .hero .tag {
+    display: inline-block;
+    margin-bottom: 24px;
+    padding: 6px 14px;
+    border: 1px solid var(--surface-line);
+    border-radius: 100px;
+  }
+
+  .hero h1 {
+    font-size: clamp(40px, 6.5vw, 76px);
+    line-height: 1.05;
+    max-width: 900px;
+    margin: 0 auto 24px;
+  }
+
+  .hero h1 .accent { color: var(--accent); }
+
+  .hero p.sub {
+    font-size: 18px;
+    color: var(--muted);
+    max-width: 560px;
+    margin: 0 auto 40px;
+  }
+
+  .hero-ctas {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* Threshold graphic */
+  .threshold {
+    position: relative;
+    max-width: 640px;
+    margin: 80px auto 0;
+    z-index: 2;
+  }
+
+  .threshold svg { width: 100%; height: auto; display: block; }
+
+  .threshold-pulse {
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.3; r: 4; }
+    50% { opacity: 1; r: 6; }
+  }
+
+  .threshold-line {
+    stroke-dasharray: 6 6;
+    animation: dash 20s linear infinite;
+  }
+
+  @keyframes dash { to { stroke-dashoffset: -200; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .threshold-pulse, .threshold-line { animation: none; }
+  }
+
+  /* Section shared */
+  section { padding: 100px 0; }
+  section:nth-of-type(even) { background: rgba(255, 255, 255, 0.015); }
+
+  .section-head { text-align: center; margin-bottom: 64px; }
+
+  .section-head .tag { display: block; margin-bottom: 16px; }
+
+  .section-head h2 {
+    font-size: clamp(28px, 4vw, 42px);
+    max-width: 620px;
+    margin: 0 auto 16px;
+  }
+
+  .section-head p {
+    color: var(--muted);
+    max-width: 520px;
+    margin: 0 auto;
+    font-size: 16px;
+  }
+
+  /* Value props */
+  .value-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+
+  .value-card {
+    background: rgba(18, 22, 31, 0.22);
+    backdrop-filter: blur(28px) saturate(120%);
+    -webkit-backdrop-filter: blur(28px) saturate(120%);
+    border: 1px solid rgba(245, 243, 238, 0.09);
+    border-radius: var(--radius);
+    box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(245, 243, 238, 0.05);
+    padding: 40px 32px;
+    transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.28s ease, border-color 0.28s ease;
+  }
+
+  .value-card:hover,
+  .step:hover,
+  .price-card:hover {
+    transform: translateY(-10px);
+    border-color: rgba(94, 234, 212, 0.35);
+    box-shadow: 0 26px 60px -12px var(--accent-glow), 0 10px 28px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(245, 243, 238, 0.08);
+  }
+
+  .value-card .tag { display: block; margin-bottom: 20px; }
+
+  .value-card h3 { font-size: 20px; margin-bottom: 10px; }
+
+  .value-card p { color: #B4B6C0; font-size: 15px; text-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+
+  /* How it works */
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+
+  .step {
+    background: rgba(18, 22, 31, 0.22);
+    backdrop-filter: blur(28px) saturate(120%);
+    -webkit-backdrop-filter: blur(28px) saturate(120%);
+    border: 1px solid rgba(245, 243, 238, 0.09);
+    border-radius: var(--radius);
+    box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(245, 243, 238, 0.05);
+    padding: 32px;
+    position: relative;
+    transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.28s ease, border-color 0.28s ease;
+  }
+
+  .step::before {
+    content: '';
+    position: absolute;
+    top: 32px;
+    left: 32px;
+    width: 24px;
+    height: 24px;
+    border: 1.5px solid var(--accent-dim);
+    border-radius: 4px;
+  }
+
+  .step-inner { padding-top: 48px; }
+
+  .step h3 { font-size: 18px; margin-bottom: 8px; }
+  .step p { color: #B4B6C0; font-size: 14px; text-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+
+  /* Pricing */
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+
+  .price-card {
+    border: 1px solid rgba(245, 243, 238, 0.09);
+    border-radius: var(--radius);
+    padding: 36px 28px;
+    background: rgba(18, 22, 31, 0.22);
+    backdrop-filter: blur(28px) saturate(120%);
+    -webkit-backdrop-filter: blur(28px) saturate(120%);
+    box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(245, 243, 238, 0.05);
+    transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.28s ease, border-color 0.28s ease;
+  }
+
+  .price-card.featured {
+    border-color: var(--accent-dim);
+    background: linear-gradient(180deg, rgba(45, 212, 191, 0.08), transparent 40%), rgba(18, 22, 31, 0.22);
+    position: relative;
+  }
+
+  .featured-badge {
+    position: absolute;
+    top: -12px;
+    left: 28px;
+    background: var(--accent);
+    color: var(--ink);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 4px;
+  }
+
+  .price-card .tag { display: block; margin-bottom: 20px; }
+
+  .price-card h3 { font-size: 22px; margin-bottom: 4px; }
+
+  .price-amount {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 36px;
+    font-weight: 600;
+    margin: 16px 0 4px;
+  }
+
+  .price-amount span {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--muted);
+  }
+
+  .price-card > p { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+
+  .price-features {
+    list-style: none;
+    margin-bottom: 28px;
+  }
+
+  .price-features li {
+    font-size: 14px;
+    color: var(--paper);
+    padding: 8px 0;
+    border-top: 1px solid var(--surface-line);
+    display: flex;
+    gap: 10px;
+  }
+
+  .price-features li::before {
+    content: '—';
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .price-card .btn { width: 100%; }
+
+  /* Contact */
+  .contact-wrap {
+    max-width: 560px;
+    margin: 0 auto;
+    border: 1px solid rgba(245, 243, 238, 0.09);
+    border-radius: var(--radius);
+    padding: 48px;
+    background: rgba(18, 22, 31, 0.3);
+    backdrop-filter: blur(28px) saturate(120%);
+    -webkit-backdrop-filter: blur(28px) saturate(120%);
+    box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(245, 243, 238, 0.05);
+  }
+
+  .field { margin-bottom: 20px; }
+
+  .field label {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .field input, .field textarea {
+    width: 100%;
+    background: var(--ink);
+    border: 1px solid var(--surface-line);
+    border-radius: 6px;
+    padding: 12px 14px;
+    color: var(--paper);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+  }
+
+  .field input:focus, .field textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .field textarea { resize: vertical; min-height: 100px; }
+
+  .contact-wrap .btn { width: 100%; margin-top: 8px; }
+
+  #form-status {
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  /* Footer */
+  footer {
+    border-top: 1px solid var(--surface-line);
+    padding: 48px 0;
+  }
+
+  .footer-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  footer .logo { font-size: 16px; }
+
+  footer p { color: var(--muted); font-size: 13px; }
+
+  /* Focus visibility */
+  a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* Responsive */
+  @media (max-width: 860px) {
+    .nav-links { display: none; }
+    .value-grid, .steps, .pricing-grid { grid-template-columns: 1fr; }
+    .hero { padding: 90px 0 70px; }
+    section { padding: 70px 0; }
+    .contact-wrap { padding: 32px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <nav>
+    <div class="logo"><span class="logo-mark"></span>Foyer</div>
+    <div class="nav-links">
+      <a href="#how-it-works">How it works</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#contact">Contact</a>
+    </div>
+    <a href="#contact" class="btn btn-primary">Book a demo</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <div class="wrap hero-content">
+    <span class="tag">[ Now answering for small businesses ]</span>
+    <h1>Every call answered.<br>Every time<span class="accent">.</span></h1>
+    <p class="sub">Foyer is the AI receptionist that picks up on the first ring, books the appointment, and never once puts your customer on hold.</p>
+    <div class="hero-ctas">
+      <a href="#contact" class="btn btn-primary">Book a demo</a>
+      <a href="#how-it-works" class="btn btn-ghost">See how it works</a>
+    </div>
+
+    <div class="threshold">
+      <svg viewBox="0 0 640 220" role="img" aria-label="Illustration of a doorway with a line representing a call passing through, always open">
+        <line x1="120" y1="30" x2="120" y2="190" stroke="#8B8D98" stroke-width="1.5" opacity="0.5"/>
+        <line x1="520" y1="30" x2="520" y2="190" stroke="#8B8D98" stroke-width="1.5" opacity="0.5"/>
+        <line x1="120" y1="30" x2="520" y2="30" stroke="#8B8D98" stroke-width="1.5" opacity="0.5"/>
+        <line class="threshold-line" x1="120" y1="190" x2="520" y2="190" stroke="#D4A72C" stroke-width="2"/>
+        <circle class="threshold-pulse" cx="320" cy="190" r="5" fill="#D4A72C"/>
+        <text x="320" y="215" text-anchor="middle" fill="#8B8D98" font-family="IBM Plex Mono, monospace" font-size="11" letter-spacing="1">THRESHOLD — ALWAYS OPEN</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section id="value">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="tag">[ Why it matters ]</span>
+      <h2>A missed call is a missed customer</h2>
+      <p>Every ring your business doesn't answer is a customer calling your competitor next. Foyer makes sure that never happens.</p>
+    </div>
+    <div class="value-grid">
+      <div class="value-card">
+        <span class="tag">01</span>
+        <h3>Answers instantly</h3>
+        <p>No hold music, no voicemail. Every call is picked up on the first ring, 24 hours a day.</p>
+      </div>
+      <div class="value-card">
+        <span class="tag">02</span>
+        <h3>Books appointments</h3>
+        <p>Foyer checks your calendar and books the customer in, live, during the call itself.</p>
+      </div>
+      <div class="value-card">
+        <span class="tag">03</span>
+        <h3>Remembers everything</h3>
+        <p>Every call is logged and kept for good, so you can see exactly how your business is performing, month over month.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how-it-works">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="tag">[ Reception ]</span>
+      <h2>How Foyer works</h2>
+      <p>No new hardware, no new phone number to give out. Foyer sits behind the number your customers already call.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-inner">
+          <h3>Your customer calls</h3>
+          <p>They dial your existing business number, exactly like they always have.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-inner">
+          <h3>Foyer picks up</h3>
+          <p>A natural-sounding conversation handles the request, answers questions, and books the appointment.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-inner">
+          <h3>You see the result</h3>
+          <p>The call, the outcome, and the customer's details land in your dashboard automatically.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="pricing">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="tag">[ Pricing ]</span>
+      <h2>Simple pricing, no surprises</h2>
+      <p>Every plan includes your dashboard, call reporting, and setup. Pick the one that fits your call volume.</p>
+    </div>
+    <div class="pricing-grid">
+      <div class="price-card">
+        <span class="tag">Starter</span>
+        <h3>For getting started</h3>
+        <div class="price-amount">$297<span>/mo</span></div>
+        <p>Best for businesses just testing the waters</p>
+        <ul class="price-features">
+          <li>Up to 200 calls / month</li>
+          <li>Appointment booking</li>
+          <li>Dashboard with call history</li>
+          <li>Email support</li>
+        </ul>
+        <a href="#contact" class="btn btn-ghost">Get started</a>
+      </div>
+      <div class="price-card featured">
+        <span class="featured-badge">Most popular</span>
+        <span class="tag">Growth</span>
+        <h3>For busy front desks</h3>
+        <div class="price-amount">$597<span>/mo</span></div>
+        <p>Best for businesses with steady call volume</p>
+        <ul class="price-features">
+          <li>Up to 600 calls / month</li>
+          <li>Appointment booking + reminders</li>
+          <li>Full monthly reporting</li>
+          <li>Priority support</li>
+        </ul>
+        <a href="#contact" class="btn btn-primary">Get started</a>
+      </div>
+      <div class="price-card">
+        <span class="tag">Pro</span>
+        <h3>For multi-location teams</h3>
+        <div class="price-amount">Custom</div>
+        <p>Best for businesses with multiple lines or locations</p>
+        <ul class="price-features">
+          <li>Unlimited calls</li>
+          <li>Custom call flows</li>
+          <li>Dedicated onboarding</li>
+          <li>Direct line to our team</li>
+        </ul>
+        <a href="#contact" class="btn btn-ghost">Talk to us</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="contact">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="tag">[ Contact ]</span>
+      <h2>Let's stop those missed calls</h2>
+      <p>Tell us a bit about your business and we'll reach out to set up a live demo.</p>
+    </div>
+    <div class="contact-wrap">
+      <form id="contact-form">
+        <div class="field">
+          <label for="name">Name</label>
+          <input type="text" id="name" name="name" required>
+        </div>
+        <div class="field">
+          <label for="business">Business name</label>
+          <input type="text" id="business" name="business" required>
+        </div>
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" required>
+        </div>
+        <div class="field">
+          <label for="message">What do you need?</label>
+          <textarea id="message" name="message" placeholder="Tell us about your business and call volume"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Request a demo</button>
+        <p id="form-status"></p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap footer-inner">
+    <div class="logo"><span class="logo-mark"></span>Foyer</div>
+    <p>&copy; 2026 Foyer Ltd. Every call answered.</p>
+  </div>
+</footer>
+
+<script>
+  // NOTE FOR LATER: this currently just opens the visitor's email app with a
+  // pre-filled message. Once the n8n workflow is ready, this can be swapped
+  // to send the form data straight to n8n instead — no page changes needed
+  // beyond this script block.
+  document.getElementById('contact-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const name = document.getElementById('name').value;
+    const business = document.getElementById('business').value;
+    const email = document.getElementById('email').value;
+    const message = document.getElementById('message').value;
+
+    const subject = encodeURIComponent('Demo request from ' + business);
+    const body = encodeURIComponent(
+      'Name: ' + name + '\n' +
+      'Business: ' + business + '\n' +
+      'Email: ' + email + '\n\n' +
+      'Message:\n' + message
+    );
+
+    window.location.href = 'mailto:hello@foyer.ltd?subject=' + subject + '&body=' + body;
+
+    document.getElementById('form-status').textContent =
+      'Opening your email app to send this — if nothing happens, email us directly at hello@foyer.ltd';
+  });
+</script>
+
+</body>
+</html>
