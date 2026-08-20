@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Foyer — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root {
+    --ink: #0B0E14;
+    --surface-line: #1E2430;
+    --accent: #5EEAD4;
+    --accent-dim: #3D9184;
+    --paper: #F5F3EE;
+    --muted: #8B8D98;
+    --radius: 10px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--ink); color: var(--paper); font-family: 'Inter', sans-serif; min-height: 100vh; }
+  body::before {
+    content: ''; position: fixed; inset: 0; z-index: -1;
+    background-image: linear-gradient(var(--surface-line) 1px, transparent 1px), linear-gradient(90deg, var(--surface-line) 1px, transparent 1px);
+    background-size: 48px 48px; opacity: 0.35;
+  }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 32px 24px 80px; }
+
+  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px; }
+  .logo { display: flex; align-items: center; gap: 8px; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; }
+  .logo-mark { width: 10px; height: 10px; background: var(--accent); border-radius: 2px; }
+  .btn-logout {
+    background: rgba(45,212,191,0.1); border: 1px solid rgba(45,212,191,0.3); color: var(--accent);
+    padding: 8px 16px; border-radius: 7px; font-size: 13px; cursor: pointer; font-family: 'Inter', sans-serif;
+  }
+  .btn-logout:hover { border-color: rgba(94,234,212,0.55); }
+
+  .tag { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 8px; }
+  h1 { font-family: 'Space Grotesk', sans-serif; font-size: 26px; margin-bottom: 32px; }
+
+  .glass {
+    background: rgba(18, 22, 31, 0.22);
+    backdrop-filter: blur(28px) saturate(120%);
+    -webkit-backdrop-filter: blur(28px) saturate(120%);
+    border: 1px solid rgba(245, 243, 238, 0.09);
+    border-radius: var(--radius);
+    box-shadow: 0 16px 40px -12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(245,243,238,0.05);
+  }
+
+  .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 40px; }
+  .stat-card { padding: 24px; }
+  .stat-label { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+  .stat-value { font-family: 'Space Grotesk', sans-serif; font-size: 30px; font-weight: 600; }
+  .stat-change { font-size: 12.5px; margin-top: 6px; }
+  .stat-change.up { color: var(--accent); }
+  .stat-change.down { color: #E4879A; }
+  .stat-change.flat { color: var(--muted); }
+
+  .table-card { padding: 8px; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; min-width: 640px; }
+  th { text-align: left; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); padding: 16px; border-bottom: 1px solid var(--surface-line); }
+  td { padding: 14px 16px; font-size: 13.5px; border-bottom: 1px solid rgba(30,36,48,0.5); }
+  tr:last-child td { border-bottom: none; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 100px; font-size: 11.5px; font-family: 'IBM Plex Mono', monospace; }
+  .badge.booked { background: rgba(45,212,191,0.12); color: var(--accent); }
+  .badge.message_taken { background: rgba(139,141,152,0.15); color: var(--muted); }
+  .badge.no_action { background: rgba(228,135,154,0.12); color: #E4879A; }
+
+  #loading, #empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo"><span class="logo-mark"></span>Foyer</div>
+      <button class="btn-logout" id="logout-btn">Log out</button>
+    </header>
+
+    <span class="tag">[ Dashboard ]</span>
+    <h1 id="business-name">Loading your business...</h1>
+
+    <div id="loading">Loading your call history...</div>
+
+    <div id="dashboard-content" style="display: none;">
+      <div class="stat-row">
+        <div class="glass stat-card">
+          <div class="stat-label">Calls this month</div>
+          <div class="stat-value" id="stat-this-month">0</div>
+          <div class="stat-change" id="stat-change">—</div>
+        </div>
+        <div class="glass stat-card">
+          <div class="stat-label">Total calls (all time)</div>
+          <div class="stat-value" id="stat-total">0</div>
+        </div>
+        <div class="glass stat-card">
+          <div class="stat-label">Avg. call length</div>
+          <div class="stat-value" id="stat-avg-duration">0:00</div>
+        </div>
+      </div>
+
+      <div class="glass table-card">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Caller</th>
+              <th>Duration</th>
+              <th>Outcome</th>
+              <th>Summary</th>
+            </tr>
+          </thead>
+          <tbody id="calls-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="empty" style="display: none;">
+      No calls logged yet. Once your number starts receiving calls, they'll show up here permanently.
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://eodwfwthazbftruofacm.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_78sjkXv-kPmjOgjcdmwAvw_U4ade6OS';
+    const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    function formatDuration(seconds) {
+      if (!seconds && seconds !== 0) return '—';
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      return m + ':' + String(s).padStart(2, '0');
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '—';
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
+        ' · ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    }
+
+    function badgeLabel(outcome) {
+      const labels = { booked: 'Booked', message_taken: 'Message taken', no_action: 'No action' };
+      return labels[outcome] || outcome || 'Unknown';
+    }
+
+    async function loadDashboard() {
+      // 1. Confirm the user is actually logged in
+      const { data: sessionData } = await client.auth.getSession();
+      if (!sessionData.session) {
+        window.location.href = 'login.html';
+        return;
+      }
+      const userId = sessionData.session.user.id;
+
+      // 2. Find which business this login belongs to
+      const { data: profile, error: profileError } = await client
+        .from('profiles')
+        .select('client_id, full_name')
+        .eq('id', userId)
+        .single();
+
+      if (profileError || !profile) {
+        document.getElementById('business-name').textContent = 'No business linked to this account yet.';
+        document.getElementById('loading').style.display = 'none';
+        return;
+      }
+
+      // 3. Get the business name
+      const { data: clientRow } = await client
+        .from('clients')
+        .select('business_name')
+        .eq('id', profile.client_id)
+        .single();
+
+      document.getElementById('business-name').textContent = clientRow ? clientRow.business_name : 'Your Dashboard';
+
+      // 4. Get every call ever logged for this business, newest first
+      const { data: calls, error: callsError } = await client
+        .from('calls')
+        .select('*')
+        .eq('client_id', profile.client_id)
+        .order('call_started_at', { ascending: false });
+
+      document.getElementById('loading').style.display = 'none';
+
+      if (callsError || !calls || calls.length === 0) {
+        document.getElementById('empty').style.display = 'block';
+        return;
+      }
+
+      document.getElementById('dashboard-content').style.display = 'block';
+
+      // Stats: this month vs last month, total, average duration
+      const now = new Date();
+      const thisMonthCalls = calls.filter(c => {
+        const d = new Date(c.call_started_at);
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      });
+      const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const lastMonthCalls = calls.filter(c => {
+        const d = new Date(c.call_started_at);
+        return d.getMonth() === lastMonthDate.getMonth() && d.getFullYear() === lastMonthDate.getFullYear();
+      });
+
+      document.getElementById('stat-this-month').textContent = thisMonthCalls.length;
+      document.getElementById('stat-total').textContent = calls.length;
+
+      const changeEl = document.getElementById('stat-change');
+      if (lastMonthCalls.length === 0) {
+        changeEl.textContent = 'No data for last month yet';
+        changeEl.className = 'stat-change flat';
+      } else {
+        const diff = thisMonthCalls.length - lastMonthCalls.length;
+        const pct = Math.round((diff / lastMonthCalls.length) * 100);
+        if (diff > 0) {
+          changeEl.textContent = '↑ ' + pct + '% vs last month';
+          changeEl.className = 'stat-change up';
+        } else if (diff < 0) {
+          changeEl.textContent = '↓ ' + Math.abs(pct) + '% vs last month';
+          changeEl.className = 'stat-change down';
+        } else {
+          changeEl.textContent = 'Same as last month';
+          changeEl.className = 'stat-change flat';
+        }
+      }
+
+      const durations = calls.map(c => c.duration_seconds).filter(d => d != null);
+      const avgDuration = durations.length ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : 0;
+      document.getElementById('stat-avg-duration').textContent = formatDuration(avgDuration);
+
+      // Table rows
+      const tbody = document.getElementById('calls-table-body');
+      tbody.innerHTML = calls.map(c => `
+        <tr>
+          <td>${formatDate(c.call_started_at)}</td>
+          <td>${c.caller_number || '—'}</td>
+          <td>${formatDuration(c.duration_seconds)}</td>
+          <td><span class="badge ${c.outcome || 'unknown'}">${badgeLabel(c.outcome)}</span></td>
+          <td>${c.summary || '—'}</td>
+        </tr>
+      `).join('');
+    }
+
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      await client.auth.signOut();
+      window.location.href = 'login.html';
+    });
+
+    loadDashboard();
+  </script>
+</body>
+</html>

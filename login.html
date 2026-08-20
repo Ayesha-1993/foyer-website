@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Foyer — Client Portal Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root {
+    --ink: #0B0E14;
+    --surface-line: #1E2430;
+    --accent: #5EEAD4;
+    --accent-dim: #3D9184;
+    --paper: #F5F3EE;
+    --muted: #8B8D98;
+    --radius: 10px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: -1;
+    background-image: linear-gradient(var(--surface-line) 1px, transparent 1px), linear-gradient(90deg, var(--surface-line) 1px, transparent 1px);
+    background-size: 48px 48px;
+    opacity: 0.35;
+  }
+
+  .logo { display: flex; align-items: center; justify-content: center; gap: 8px; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; margin-bottom: 32px; }
+  .logo-mark { width: 10px; height: 10px; background: var(--accent); border-radius: 2px; }
+
+  .card {
+    width: 100%; max-width: 400px;
+    background: rgba(18, 22, 31, 0.3);
+    backdrop-filter: blur(28px) saturate(120%);
+    -webkit-backdrop-filter: blur(28px) saturate(120%);
+    border: 1px solid rgba(245, 243, 238, 0.09);
+    border-radius: var(--radius);
+    padding: 40px;
+    box-shadow: 0 16px 40px -12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(245,243,238,0.05);
+  }
+
+  .tag { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); display: block; text-align: center; margin-bottom: 12px; }
+  h1 { font-family: 'Space Grotesk', sans-serif; font-size: 22px; text-align: center; margin-bottom: 8px; }
+  .sub { text-align: center; color: var(--muted); font-size: 13.5px; margin-bottom: 28px; }
+
+  .field { margin-bottom: 18px; }
+  .field label { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .field input {
+    width: 100%; background: var(--ink); border: 1px solid var(--surface-line); border-radius: 6px;
+    padding: 12px 14px; color: var(--paper); font-family: 'Inter', sans-serif; font-size: 14px;
+  }
+  .field input:focus { outline: none; border-color: var(--accent); }
+
+  .btn {
+    width: 100%; padding: 12px; border: none; border-radius: 8px;
+    background: var(--accent-dim); color: #EFFBF8; font-size: 14px; font-weight: 500;
+    cursor: pointer; margin-top: 8px;
+    box-shadow: 0 6px 18px -6px rgba(61,145,132,0.4);
+  }
+  .btn:hover { background: #489e90; }
+  .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  #status { margin-top: 16px; font-size: 13px; text-align: center; min-height: 18px; }
+  #status.error { color: #E4879A; }
+  #status.info { color: var(--muted); }
+</style>
+</head>
+<body>
+  <div>
+    <div class="logo"><span class="logo-mark"></span>Foyer</div>
+    <div class="card">
+      <span class="tag">[ Client Portal ]</span>
+      <h1>Welcome back</h1>
+      <p class="sub">Log in to see your call history and reports.</p>
+      <form id="login-form">
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" required autocomplete="email">
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input type="password" id="password" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn" id="submit-btn">Log in</button>
+        <p id="status"></p>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // These are safe to have here — the publishable key only allows
+    // what the database's security rules (RLS) permit, nothing more.
+    const SUPABASE_URL = 'https://eodwfwthazbftruofacm.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_78sjkXv-kPmjOgjcdmwAvw_U4ade6OS';
+    const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // If already logged in, skip straight to the dashboard
+    client.auth.getSession().then(({ data }) => {
+      if (data.session) window.location.href = 'dashboard.html';
+    });
+
+    const form = document.getElementById('login-form');
+    const statusEl = document.getElementById('status');
+    const btn = document.getElementById('submit-btn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      btn.disabled = true;
+      statusEl.textContent = 'Logging in...';
+      statusEl.className = 'info';
+
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      const { error } = await client.auth.signInWithPassword({ email, password });
+
+      if (error) {
+        statusEl.textContent = error.message === 'Invalid login credentials'
+          ? 'Incorrect email or password.'
+          : error.message;
+        statusEl.className = 'error';
+        btn.disabled = false;
+      } else {
+        statusEl.textContent = 'Success — redirecting...';
+        statusEl.className = 'info';
+        window.location.href = 'dashboard.html';
+      }
+    });
+  </script>
+</body>
+</html>
