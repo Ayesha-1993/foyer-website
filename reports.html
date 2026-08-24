@@ -88,14 +88,14 @@
             <div class="chart-title">Booked vs. not booked</div>
             <div class="donut-wrap">
               <svg width="140" height="140" viewBox="0 0 120 120">
-                <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(228,135,154,0.18)" stroke-width="14"/>
-                <circle id="donut-arc" cx="60" cy="60" r="50" fill="none" stroke="#5EEAD4" stroke-width="14" stroke-dasharray="0 314" transform="rotate(-90 60 60)" stroke-linecap="round"/>
+                <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(228,135,154,0.2)" stroke-width="14"/>
+                <circle id="donut-arc" cx="60" cy="60" r="50" fill="none" stroke="#A78BFA" stroke-width="14" stroke-dasharray="0 314" transform="rotate(-90 60 60)" stroke-linecap="round"/>
                 <text id="donut-pct" x="60" y="56" text-anchor="middle" fill="#F5F3EE" font-family="Space Grotesk, sans-serif" font-size="20" font-weight="600">0%</text>
                 <text x="60" y="72" text-anchor="middle" fill="#8B8D98" font-family="IBM Plex Mono, monospace" font-size="8">BOOKED</text>
               </svg>
               <div class="legend">
-                <div class="legend-row"><span class="legend-dot" style="background:#5EEAD4"></span>Booked<span class="legend-value" id="legend-booked">0 · 0%</span></div>
-                <div class="legend-row"><span class="legend-dot" style="background:rgba(228,135,154,0.6)"></span>Not booked<span class="legend-value" id="legend-not-booked">0 · 0%</span></div>
+                <div class="legend-row"><span class="legend-dot" style="background:#A78BFA"></span>Booked<span class="legend-value" id="legend-booked">0 · 0%</span></div>
+                <div class="legend-row"><span class="legend-dot" style="background:#E4879A"></span>Not booked<span class="legend-value" id="legend-not-booked">0 · 0%</span></div>
               </div>
             </div>
           </div>
@@ -142,9 +142,12 @@
         if (bucket) bucket.count++;
       });
       const max = Math.max(1, ...months.map(m => m.count));
-      document.getElementById('bar-chart').innerHTML = months.map(m => `
-        <div class="bar-col"><div class="bar" style="height:${Math.round((m.count / max) * 100)}%"></div><span class="bar-label">${m.label}</span></div>
-      `).join('');
+      const palette = ['#7EB6F6', '#A78BFA', '#7FE0B8', '#E4879A'];
+      document.getElementById('bar-chart').innerHTML = months.map((m, i) => {
+        const isCurrent = i === months.length - 1;
+        const color = isCurrent ? '#5EEAD4' : palette[i % palette.length];
+        return `<div class="bar-col"><div class="bar" style="height:${Math.round((m.count / max) * 100)}%; background:linear-gradient(180deg, ${color}88, ${color}22); border:1px solid ${color}66;"></div><span class="bar-label">${m.label}</span></div>`;
+      }).join('');
     }
 
     async function loadReports() {
