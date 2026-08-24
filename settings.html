@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Foyer — Settings</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root {
+    --ink: #0B0E14; --surface-line: #1E2430; --accent: #5EEAD4; --accent-dim: #3D9184;
+    --warn: #E4879A; --paper: #F5F3EE; --muted: #8B8D98; --radius: 10px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--ink); color: var(--paper); font-family: 'Inter', sans-serif; }
+  body::before {
+    content: ''; position: fixed; inset: 0; z-index: -1;
+    background-image: linear-gradient(var(--surface-line) 1px, transparent 1px), linear-gradient(90deg, var(--surface-line) 1px, transparent 1px);
+    background-size: 48px 48px; opacity: 0.3;
+  }
+  .layout { display: flex; min-height: 100vh; }
+  .sidebar { width: 220px; flex-shrink: 0; padding: 28px 20px; border-right: 1px solid var(--surface-line); display: flex; flex-direction: column; }
+  .logo { display: flex; align-items: center; gap: 8px; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; margin-bottom: 40px; }
+  .logo-mark { width: 10px; height: 10px; background: var(--accent); border-radius: 2px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 7px; font-size: 13.5px; color: var(--muted); margin-bottom: 4px; text-decoration: none; cursor: pointer; }
+  .nav-item:hover { color: var(--paper); }
+  .nav-item.active { background: rgba(45,212,191,0.1); color: var(--accent); }
+  .nav-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+  .sidebar-footer { margin-top: auto; }
+  .btn-logout { width: 100%; background: rgba(45,212,191,0.1); border: 1px solid rgba(45,212,191,0.3); color: var(--accent); padding: 9px; border-radius: 7px; font-size: 12.5px; cursor: pointer; font-family: 'Inter', sans-serif; }
+  .btn-logout:hover { border-color: rgba(94,234,212,0.55); }
+
+  .main { flex: 1; padding: 32px 40px 80px; }
+  .tag { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 8px; }
+  h1 { font-family: 'Space Grotesk', sans-serif; font-size: 24px; margin-bottom: 28px; }
+
+  .glass { background: rgba(18,22,31,0.22); backdrop-filter: blur(28px) saturate(120%); -webkit-backdrop-filter: blur(28px) saturate(120%); border: 1px solid rgba(245,243,238,0.09); border-radius: var(--radius); box-shadow: 0 16px 40px -12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(245,243,238,0.05); }
+
+  .settings-card { padding: 28px; max-width: 520px; }
+  .field-row { padding: 16px 0; border-bottom: 1px solid var(--surface-line); }
+  .field-row:last-child { border-bottom: none; }
+  .field-label { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .field-value { font-size: 14.5px; }
+  .note { color: var(--muted); font-size: 12.5px; margin-top: 20px; }
+
+  #loading { text-align: center; padding: 60px 20px; color: var(--muted); }
+</style>
+</head>
+<body>
+  <div class="layout">
+    <div class="sidebar">
+      <div class="logo"><span class="logo-mark"></span>Foyer</div>
+      <a href="dashboard.html" class="nav-item"><span class="nav-dot"></span>Overview</a>
+      <a href="calls.html" class="nav-item"><span class="nav-dot"></span>Calls</a>
+      <a href="reports.html" class="nav-item"><span class="nav-dot"></span>Reports</a>
+      <a href="settings.html" class="nav-item active"><span class="nav-dot"></span>Settings</a>
+      <div class="sidebar-footer"><button class="btn-logout" id="logout-btn">Log out</button></div>
+    </div>
+
+    <div class="main">
+      <span class="tag">[ Settings ]</span>
+      <h1>Business info</h1>
+
+      <div id="loading">Loading...</div>
+
+      <div class="glass settings-card" id="settings-content" style="display: none;">
+        <div class="field-row">
+          <div class="field-label">Business name</div>
+          <div class="field-value" id="f-name">—</div>
+        </div>
+        <div class="field-row">
+          <div class="field-label">Contact email</div>
+          <div class="field-value" id="f-email">—</div>
+        </div>
+        <div class="field-row">
+          <div class="field-label">Contact phone</div>
+          <div class="field-value" id="f-phone">—</div>
+        </div>
+        <div class="field-row">
+          <div class="field-label">Foyer number</div>
+          <div class="field-value" id="f-vapi-number">—</div>
+        </div>
+        <div class="field-row">
+          <div class="field-label">Plan</div>
+          <div class="field-value" id="f-plan">—</div>
+        </div>
+      </div>
+      <p class="note">To update any of this information, contact us — editing isn't available here yet.</p>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://eodwfwthazbftruofacm.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_78sjkXv-kPmjOgjcdmwAvw_U4ade6OS';
+    const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    async function loadSettings() {
+      const { data: sessionData } = await client.auth.getSession();
+      if (!sessionData.session) { window.location.href = 'login.html'; return; }
+      const userId = sessionData.session.user.id;
+
+      const { data: profile } = await client.from('profiles').select('client_id').eq('id', userId).single();
+      if (!profile) { document.getElementById('loading').textContent = 'No business linked to this account yet.'; return; }
+
+      const { data: clientRow, error } = await client
+        .from('clients')
+        .select('business_name, contact_email, contact_phone, vapi_phone_number, plan')
+        .eq('id', profile.client_id)
+        .single();
+
+      document.getElementById('loading').style.display = 'none';
+      if (error || !clientRow) return;
+
+      document.getElementById('settings-content').style.display = 'block';
+      document.getElementById('f-name').textContent = clientRow.business_name || '—';
+      document.getElementById('f-email').textContent = clientRow.contact_email || '—';
+      document.getElementById('f-phone').textContent = clientRow.contact_phone || '—';
+      document.getElementById('f-vapi-number').textContent = clientRow.vapi_phone_number || '—';
+      document.getElementById('f-plan').textContent = clientRow.plan ? clientRow.plan.charAt(0).toUpperCase() + clientRow.plan.slice(1) : '—';
+    }
+
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      await client.auth.signOut();
+      window.location.href = 'login.html';
+    });
+
+    loadSettings();
+  </script>
+</body>
+</html>

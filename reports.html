@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Foyer — Reports</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root {
+    --ink: #0B0E14; --surface-line: #1E2430; --accent: #5EEAD4; --accent-dim: #3D9184;
+    --warn: #E4879A; --paper: #F5F3EE; --muted: #8B8D98; --radius: 10px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--ink); color: var(--paper); font-family: 'Inter', sans-serif; }
+  body::before {
+    content: ''; position: fixed; inset: 0; z-index: -1;
+    background-image: linear-gradient(var(--surface-line) 1px, transparent 1px), linear-gradient(90deg, var(--surface-line) 1px, transparent 1px);
+    background-size: 48px 48px; opacity: 0.3;
+  }
+  .layout { display: flex; min-height: 100vh; }
+  .sidebar { width: 220px; flex-shrink: 0; padding: 28px 20px; border-right: 1px solid var(--surface-line); display: flex; flex-direction: column; }
+  .logo { display: flex; align-items: center; gap: 8px; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; margin-bottom: 40px; }
+  .logo-mark { width: 10px; height: 10px; background: var(--accent); border-radius: 2px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 7px; font-size: 13.5px; color: var(--muted); margin-bottom: 4px; text-decoration: none; cursor: pointer; }
+  .nav-item:hover { color: var(--paper); }
+  .nav-item.active { background: rgba(45,212,191,0.1); color: var(--accent); }
+  .nav-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+  .sidebar-footer { margin-top: auto; }
+  .btn-logout { width: 100%; background: rgba(45,212,191,0.1); border: 1px solid rgba(45,212,191,0.3); color: var(--accent); padding: 9px; border-radius: 7px; font-size: 12.5px; cursor: pointer; font-family: 'Inter', sans-serif; }
+  .btn-logout:hover { border-color: rgba(94,234,212,0.55); }
+
+  .main { flex: 1; padding: 32px 40px 80px; }
+  .tag { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 8px; }
+  h1 { font-family: 'Space Grotesk', sans-serif; font-size: 24px; margin-bottom: 28px; }
+
+  .glass { background: rgba(18,22,31,0.22); backdrop-filter: blur(28px) saturate(120%); -webkit-backdrop-filter: blur(28px) saturate(120%); border: 1px solid rgba(245,243,238,0.09); border-radius: var(--radius); box-shadow: 0 16px 40px -12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(245,243,238,0.05); }
+
+  .chart-card { padding: 28px; margin-bottom: 20px; }
+  .chart-title { font-size: 14px; font-weight: 500; margin-bottom: 24px; }
+  .chart-wrap { display: flex; align-items: flex-end; gap: 20px; height: 220px; padding: 0 4px; }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 10px; justify-content: flex-end; height: 100%; }
+  .bar { width: 100%; background: linear-gradient(180deg, rgba(45,212,191,0.5), rgba(45,212,191,0.15)); border: 1px solid rgba(45,212,191,0.4); border-radius: 5px 5px 0 0; min-height: 2px; }
+  .bar-label { font-size: 11.5px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; }
+
+  .insight-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .donut-card { padding: 28px; }
+  .donut-wrap { display: flex; align-items: center; gap: 32px; }
+  .legend { display: flex; flex-direction: column; gap: 10px; }
+  .legend-row { display: flex; align-items: center; gap: 10px; font-size: 13.5px; }
+  .legend-dot { width: 9px; height: 9px; border-radius: 50%; }
+  .legend-value { color: var(--muted); font-family: 'IBM Plex Mono', monospace; margin-left: auto; }
+
+  .breakdown-card { padding: 28px; }
+  .breakdown-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--surface-line); font-size: 13.5px; }
+  .breakdown-row:last-child { border-bottom: none; }
+  .breakdown-label { color: var(--muted); }
+  .breakdown-value { font-family: 'Space Grotesk', sans-serif; font-weight: 600; }
+
+  #loading, #empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+</style>
+</head>
+<body>
+  <div class="layout">
+    <div class="sidebar">
+      <div class="logo"><span class="logo-mark"></span>Foyer</div>
+      <a href="dashboard.html" class="nav-item"><span class="nav-dot"></span>Overview</a>
+      <a href="calls.html" class="nav-item"><span class="nav-dot"></span>Calls</a>
+      <a href="reports.html" class="nav-item active"><span class="nav-dot"></span>Reports</a>
+      <a href="settings.html" class="nav-item"><span class="nav-dot"></span>Settings</a>
+      <div class="sidebar-footer"><button class="btn-logout" id="logout-btn">Log out</button></div>
+    </div>
+
+    <div class="main">
+      <span class="tag">[ Reports ]</span>
+      <h1>Performance over time</h1>
+
+      <div id="loading">Loading your reports...</div>
+
+      <div id="content" style="display: none;">
+        <div class="glass chart-card">
+          <div class="chart-title">Calls per month</div>
+          <div class="chart-wrap" id="bar-chart"></div>
+        </div>
+
+        <div class="insight-row">
+          <div class="glass donut-card">
+            <div class="chart-title">Booked vs. not booked</div>
+            <div class="donut-wrap">
+              <svg width="140" height="140" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(228,135,154,0.18)" stroke-width="14"/>
+                <circle id="donut-arc" cx="60" cy="60" r="50" fill="none" stroke="#5EEAD4" stroke-width="14" stroke-dasharray="0 314" transform="rotate(-90 60 60)" stroke-linecap="round"/>
+                <text id="donut-pct" x="60" y="56" text-anchor="middle" fill="#F5F3EE" font-family="Space Grotesk, sans-serif" font-size="20" font-weight="600">0%</text>
+                <text x="60" y="72" text-anchor="middle" fill="#8B8D98" font-family="IBM Plex Mono, monospace" font-size="8">BOOKED</text>
+              </svg>
+              <div class="legend">
+                <div class="legend-row"><span class="legend-dot" style="background:#5EEAD4"></span>Booked<span class="legend-value" id="legend-booked">0 · 0%</span></div>
+                <div class="legend-row"><span class="legend-dot" style="background:rgba(228,135,154,0.6)"></span>Not booked<span class="legend-value" id="legend-not-booked">0 · 0%</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass breakdown-card">
+            <div class="chart-title">This month vs. last month</div>
+            <div class="breakdown-row"><span class="breakdown-label">This month's calls</span><span class="breakdown-value" id="bd-this">0</span></div>
+            <div class="breakdown-row"><span class="breakdown-label">Last month's calls</span><span class="breakdown-value" id="bd-last">0</span></div>
+            <div class="breakdown-row"><span class="breakdown-label">Change</span><span class="breakdown-value" id="bd-change">—</span></div>
+            <div class="breakdown-row"><span class="breakdown-label">Avg. call length</span><span class="breakdown-value" id="bd-avg">0:00</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="empty" style="display: none;">
+        No calls logged yet. Reports will appear here once your number starts receiving calls.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://eodwfwthazbftruofacm.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_78sjkXv-kPmjOgjcdmwAvw_U4ade6OS';
+    const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    function formatDuration(seconds) {
+      if (!seconds && seconds !== 0) return '—';
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      return m + ':' + String(s).padStart(2, '0');
+    }
+
+    function renderBarChart(calls) {
+      const now = new Date();
+      const months = [];
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        months.push({ year: d.getFullYear(), month: d.getMonth(), label: d.toLocaleDateString('en-US', { month: 'short' }), count: 0 });
+      }
+      calls.forEach(c => {
+        if (!c.call_started_at) return;
+        const d = new Date(c.call_started_at);
+        const bucket = months.find(m => m.year === d.getFullYear() && m.month === d.getMonth());
+        if (bucket) bucket.count++;
+      });
+      const max = Math.max(1, ...months.map(m => m.count));
+      document.getElementById('bar-chart').innerHTML = months.map(m => `
+        <div class="bar-col"><div class="bar" style="height:${Math.round((m.count / max) * 100)}%"></div><span class="bar-label">${m.label}</span></div>
+      `).join('');
+    }
+
+    async function loadReports() {
+      const { data: sessionData } = await client.auth.getSession();
+      if (!sessionData.session) { window.location.href = 'login.html'; return; }
+      const userId = sessionData.session.user.id;
+
+      const { data: profile } = await client.from('profiles').select('client_id').eq('id', userId).single();
+      if (!profile) { document.getElementById('loading').textContent = 'No business linked to this account yet.'; return; }
+
+      const { data: calls, error } = await client
+        .from('calls')
+        .select('*')
+        .eq('client_id', profile.client_id)
+        .order('call_started_at', { ascending: false });
+
+      document.getElementById('loading').style.display = 'none';
+
+      if (error || !calls || calls.length === 0) {
+        document.getElementById('empty').style.display = 'block';
+        return;
+      }
+
+      document.getElementById('content').style.display = 'block';
+      renderBarChart(calls);
+
+      const total = calls.length;
+      const booked = calls.filter(c => c.outcome === 'booked').length;
+      const pct = total > 0 ? Math.round((booked / total) * 100) : 0;
+      const circumference = 2 * Math.PI * 50;
+      document.getElementById('donut-arc').setAttribute('stroke-dasharray', (circumference * pct / 100) + ' ' + circumference);
+      document.getElementById('donut-pct').textContent = pct + '%';
+      document.getElementById('legend-booked').textContent = booked + ' · ' + pct + '%';
+      document.getElementById('legend-not-booked').textContent = (total - booked) + ' · ' + (100 - pct) + '%';
+
+      const now = new Date();
+      const thisMonth = calls.filter(c => { const d = new Date(c.call_started_at); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); });
+      const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const lastMonth = calls.filter(c => { const d = new Date(c.call_started_at); return d.getMonth() === lastMonthDate.getMonth() && d.getFullYear() === lastMonthDate.getFullYear(); });
+
+      document.getElementById('bd-this').textContent = thisMonth.length;
+      document.getElementById('bd-last').textContent = lastMonth.length;
+      document.getElementById('bd-change').textContent = lastMonth.length > 0
+        ? (thisMonth.length >= lastMonth.length ? '+' : '') + Math.round(((thisMonth.length - lastMonth.length) / lastMonth.length) * 100) + '%'
+        : '—';
+
+      const durations = calls.map(c => c.duration_seconds).filter(d => d != null);
+      const avg = durations.length ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : 0;
+      document.getElementById('bd-avg').textContent = formatDuration(avg);
+    }
+
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      await client.auth.signOut();
+      window.location.href = 'login.html';
+    });
+
+    loadReports();
+  </script>
+</body>
+</html>

@@ -23,7 +23,8 @@
   .sidebar { width: 220px; flex-shrink: 0; padding: 28px 20px; border-right: 1px solid var(--surface-line); display: flex; flex-direction: column; }
   .logo { display: flex; align-items: center; gap: 8px; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; margin-bottom: 40px; }
   .logo-mark { width: 10px; height: 10px; background: var(--accent); border-radius: 2px; }
-  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 7px; font-size: 13.5px; color: var(--muted); margin-bottom: 4px; cursor: default; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 7px; font-size: 13.5px; color: var(--muted); margin-bottom: 4px; text-decoration: none; cursor: pointer; }
+  .nav-item:hover { color: var(--paper); }
   .nav-item.active { background: rgba(45,212,191,0.1); color: var(--accent); }
   .nav-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
   .sidebar-footer { margin-top: auto; }
@@ -93,10 +94,10 @@
   <div class="layout">
     <div class="sidebar">
       <div class="logo"><span class="logo-mark"></span>Foyer</div>
-      <div class="nav-item active"><span class="nav-dot"></span>Overview</div>
-      <div class="nav-item" title="Coming soon"><span class="nav-dot"></span>Calls</div>
-      <div class="nav-item" title="Coming soon"><span class="nav-dot"></span>Reports</div>
-      <div class="nav-item" title="Coming soon"><span class="nav-dot"></span>Settings</div>
+      <a href="dashboard.html" class="nav-item active"><span class="nav-dot"></span>Overview</a>
+      <a href="calls.html" class="nav-item"><span class="nav-dot"></span>Calls</a>
+      <a href="reports.html" class="nav-item"><span class="nav-dot"></span>Reports</a>
+      <a href="settings.html" class="nav-item"><span class="nav-dot"></span>Settings</a>
       <div class="sidebar-footer"><button class="btn-logout" id="logout-btn">Log out</button></div>
     </div>
 
